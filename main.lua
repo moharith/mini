@@ -1,6 +1,15 @@
+-- todo 
+-- main menu
+-- bug yellow green
+-- background music
+-- better word list
+-- graphics
+-- font
+
+
 -- constants
 WINDOW_WIDTH, WINDOW_HEIGHT = love.graphics.getDimensions()
-WORD_LENGTH = 8
+WORD_LENGTH = 5
 GRID_MAX_HEIGHT = 5 
 GRID_SIZE = 40
 GRIDSIZE_DRAW = 38
@@ -48,6 +57,8 @@ function game_reset()
         end
     end
 
+    GameState = 'playing'
+
 end
 
 function love.keypressed(key)
@@ -63,8 +74,13 @@ function love.keypressed(key)
 
     elseif key == 'right' then 
 
-        if SelectX < GRID_MAX then
+        if SelectX < WORD_LENGTH then
            SelectX = SelectX + 1
+        end
+    
+    elseif key == 'down' then
+        if GameState == 'main' then
+            SelectY = SelectY + 1
         end
 
     elseif key == 'backspace' then
@@ -113,15 +129,10 @@ function love.keypressed(key)
         -- characters
 
     elseif key:match('^%a$') then --letters
-                LaatsteToets = string.byte(key)
                 Grid[SelectY][SelectX].content = string.upper(key)
                 if SelectX < WORD_LENGTH then 
                     SelectX = SelectX + 1
                 end
-         --   end
-    --    end
-            
-   --     end
     end
 end
 
@@ -131,6 +142,10 @@ end
 
 function love.draw()
     love.graphics.setFont(font)
+
+    if GameState == 'main' then
+        main_menu()
+    end
 
     if GameState == 'playing' then
             
@@ -176,3 +191,27 @@ function love.draw()
     end
 end
 
+function main_menu()
+  
+    love.graphics.setColor(1,1,1,0.3)
+    love.graphics.rectangle('fill', (SelectX * GRID_SIZE), (SelectY * GRID_SIZE), 200, GRIDSIZE_DRAW )
+
+
+    love.graphics.setColor(1,1,1,1)
+
+    love.graphics.rectangle('line', WINDOW_WIDTH * .1, WINDOW_HEIGHT * .1, WINDOW_WIDTH * .8, WINDOW_HEIGHT * .8)
+    love.graphics.printf('Welkom bij Wurdle',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 4)  , 250, "center")
+    love.graphics.printf('Gemaakt door Jordi de Geus',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 3) , 250, "center")
+
+    love.graphics.printf('Nieuw spel',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 100, 250, "center")
+
+    love.graphics.printf('Woordlengte: ' .. WORD_LENGTH,(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 150  , 250, "center")
+    love.graphics.printf('Aantal Rijen: ' .. GRID_MAX_HEIGHT,(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 200 , 250, "center")
+
+
+
+
+
+
+
+end
