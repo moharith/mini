@@ -1,6 +1,6 @@
 -- todo 
--- main menu
--- bug yellow green
+-- main menu CHECK
+-- bug yellow green (2nd letter)
 -- background music
 -- better word list
 -- graphics
@@ -14,39 +14,54 @@ GRID_MAX_HEIGHT = 5
 GRID_SIZE = 40
 GRIDSIZE_DRAW = 38
 FONT_SIZE = 20
+MENU_HEIGHT = 30
+
+local place = 1
 
 local Word = "prima"
-local WordTable = {}
+
 local SelectX, SelectY = 1 ,1 
 local GameState = 'playing'
 
 function love.load()
-    -- READ WORDLIST
-    for line in love.filesystem.lines("wordlist.txt") do
-        if string.len(line) == WORD_LENGTH then 
-            table.insert(WordTable,string.upper(line))
-        end
-    end
-
     font = love.graphics.newFont(FONT_SIZE)
     game_reset()
 end
 
 function game_reset()
-    WordStorage = { }
-    Grid = {}
+    -- init
+    SelectX, SelectY = 1 ,1 
 
+    -- clear tables
+    WordTable = {} -- table with all the words (within word_length) from list
+    WordStorage = {} -- word (divided into characters)
+    Grid = {} -- grid
+    menu = {} -- menu list
+
+    -- build wordlist
+
+    for line in love.filesystem.lines("basiswoorden-gekeurd.txt") do
+        if string.len(line) == WORD_LENGTH then 
+            -- here maybe check for dirty characters..
+            table.insert(WordTable,string.upper(line))
+        end
+    end
+
+    -- select random word from wordlist
     randomNumber = love.math.random(1, #WordTable)
     Word = WordTable[randomNumber]
-    print(Word)
 
-    SelectX, SelectY = 1 ,1 
+    -- divide word into characters
 
     for i = 1, WORD_LENGTH do -- save word 
         table.insert(WordStorage,
             {character = string.sub(Word,i,i),})
     end
-    
+
+    print(Word)
+    -- build grid
+
+
     for y = 1, GRID_MAX_HEIGHT do
         Grid[y] = {}
         for x = 1, WORD_LENGTH do
@@ -57,7 +72,17 @@ function game_reset()
         end
     end
 
-    GameState = 'playing'
+    -- build menu 
+        
+   
+    for y = 1, 3 do
+        menu[y] = { 
+        text = " ",
+        select = false
+        }
+    end
+    menu[1].select = true
+    GameState = 'main'
 
 end
 
@@ -68,19 +93,60 @@ function love.keypressed(key)
 
     elseif key == 'left' then 
 
-        if SelectX > 1 then 
-            SelectX = SelectX - 1
+        if GameState == 'main' then
+            if place == 2 and WORD_LENGTH > 3 then 
+                WORD_LENGTH = WORD_LENGTH - 1
+            elseif place == 3 and GRID_MAX_HEIGHT > 3 then 
+                GRID_MAX_HEIGHT = GRID_MAX_HEIGHT - 1 
+            end               
+            
+        else
+
+            if SelectX > 1 then 
+                SelectX = SelectX - 1
+            end
         end
 
     elseif key == 'right' then 
 
-        if SelectX < WORD_LENGTH then
-           SelectX = SelectX + 1
+        if GameState == 'main' then
+            if place == 2 and WORD_LENGTH < 10 then 
+                WORD_LENGTH = WORD_LENGTH + 1
+                print(WORD_LENGTH)
+            elseif place == 3 and GRID_MAX_HEIGHT < 10 then 
+                GRID_MAX_HEIGHT = GRID_MAX_HEIGHT + 1                
+            
+            end
+
+        else
+
+            if SelectX < WORD_LENGTH then
+            SelectX = SelectX + 1
+            end
         end
     
     elseif key == 'down' then
         if GameState == 'main' then
-            SelectY = SelectY + 1
+            menu[place].select = false
+            if place > 0 then 
+                if place ~= 3 then
+                    place = place + 1
+                else  
+                    place = 1
+                end
+            end
+            menu[place].select = true
+        end
+
+    elseif key == 'up' then
+        if GameState == 'main' then
+            menu[place].select = false
+            if place > 1 then 
+                place = place - 1
+            else
+                place = 3
+            end
+            menu[place].select = true
         end
 
     elseif key == 'backspace' then
@@ -95,11 +161,7 @@ function love.keypressed(key)
             local wordscore = 0
 
             for pos = 1, WORD_LENGTH do
-                for p = 1, WORD_LENGTH do -- check letter '1 to 5' is within WordStorage [1 to 5]
-                    if Grid[SelectY][p].content == WordStorage[pos].character then 
-                        Grid[SelectY][p].flag = 'possible' -- Flag the Grid
-                    end      
-                end
+            
 
                 -- check if letter is on correct position
 
@@ -110,6 +172,12 @@ function love.keypressed(key)
                             GameState = 'won'
                         end
 
+                end
+
+                for p = 1, WORD_LENGTH do -- check letter is within WordStorage [1 to ..] -- only if not correct.
+                    if  Grid[SelectY][pos].flag ~= 'correct' and Grid[SelectY][p].content == WordStorage[pos].character then 
+                        Grid[SelectY][p].flag = 'possible' -- Flag the Grid
+                    end      
                 end
             end
 
@@ -136,9 +204,9 @@ function love.keypressed(key)
     end
 end
 
-function love.update(dt)
+-- function love.update(dt)
 
-end
+-- end
 
 function love.draw()
     love.graphics.setFont(font)
@@ -159,11 +227,14 @@ function love.draw()
 
                 elseif Grid[y][x].flag == 'possible' then
                     love.graphics.setColor(1,1,0,0.7)
-                                
-                elseif Grid[y][x].flag == 'correct' then
-                    love.graphics.setColor(0,.87,0,0.7)
-
                 end
+                                
+                if Grid[y][x].flag == 'correct' then
+
+                    Grid[y+1][x].content = Grid[y][x].content 
+                    love.graphics.setColor(0,.87,0,0.7)
+                end
+
 
                 -- draw box
 
@@ -172,7 +243,7 @@ function love.draw()
                 -- draw text
                 
                 love.graphics.setColor(1,1,1,1)
-                love.graphics.print(tostring(Grid[y][x].content), (x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
+                love.graphics.print(tostring(Grid[y][x].content ), (x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
           
 
             end
@@ -191,22 +262,33 @@ function love.draw()
     end
 end
 
-function main_menu()
-  
-    love.graphics.setColor(1,1,1,0.3)
-    love.graphics.rectangle('fill', (SelectX * GRID_SIZE), (SelectY * GRID_SIZE), 200, GRIDSIZE_DRAW )
 
+function main_menu()
 
     love.graphics.setColor(1,1,1,1)
+
 
     love.graphics.rectangle('line', WINDOW_WIDTH * .1, WINDOW_HEIGHT * .1, WINDOW_WIDTH * .8, WINDOW_HEIGHT * .8)
     love.graphics.printf('Welkom bij Wurdle',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 4)  , 250, "center")
     love.graphics.printf('Gemaakt door Jordi de Geus',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 3) , 250, "center")
 
-    love.graphics.printf('Nieuw spel',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 100, 250, "center")
 
-    love.graphics.printf('Woordlengte: ' .. WORD_LENGTH,(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 150  , 250, "center")
-    love.graphics.printf('Aantal Rijen: ' .. GRID_MAX_HEIGHT,(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 2) + 200 , 250, "center")
+ 
+    menu[1].text = 'Nieuw spel' 
+    menu[2].text = 'Woordlengte: ' .. WORD_LENGTH
+    menu[3].text = 'Aantal Rijen: ' .. GRID_MAX_HEIGHT
+
+    for y = 1 , 3 do
+
+        if menu[y].select == true then 
+            love.graphics.setColor(1,1,0,0.8) 
+        elseif menu[y].select == false then 
+            love.graphics.setColor(1,1,1,1)    
+        end        
+
+
+        love.graphics.printf(menu[y].text,(WINDOW_WIDTH / 3)  , (y + 10) * MENU_HEIGHT ,250, "center")
+    end
 
 
 
