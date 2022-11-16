@@ -1,8 +1,8 @@
 -- todo 
 -- main menu CHECK
--- bug yellow green (2nd letter)
+-- bug yellow green (2nd letter) CHECK
 -- background music
--- better word list
+-- better word list CHECK
 -- graphics
 -- font
 
@@ -31,6 +31,7 @@ end
 function game_reset()
     -- init
     SelectX, SelectY = 1 ,1 
+    score = 0
 
     -- clear tables
     WordTable = {} -- table with all the words (within word_length) from list
@@ -58,9 +59,8 @@ function game_reset()
             {character = string.sub(Word,i,i),})
     end
 
-    print(Word)
     -- build grid
-
+    print(Word)
 
     for y = 1, GRID_MAX_HEIGHT do
         Grid[y] = {}
@@ -86,10 +86,36 @@ function game_reset()
 
 end
 
+function new_game()
+    Word = WordTable[randomNumber]
+
+    for i = 1, WORD_LENGTH do -- save word 
+        table.insert(WordStorage,
+            {character = string.sub(Word,i,i),})
+    end
+
+    for y = 1, GRID_MAX_HEIGHT do
+        Grid[y] = {}
+        for x = 1, WORD_LENGTH do
+            Grid[y][x] = {
+                content = ' ', -- letter space
+                flag = 'neutral' -- flag
+            }            
+        end
+    end
+
+end
+
 function love.keypressed(key)
 
     if key == 'escape' then
+
+        if GameState ~= 'main' 
+            then GameState = 'main'
+
+        else
         love.event.quit()
+        end
 
     elseif key == 'left' then 
 
@@ -149,10 +175,12 @@ function love.keypressed(key)
             menu[place].select = true
         end
 
-    elseif key == 'backspace' then
-        SelectX = SelectX - 1
+    elseif key == 'backspace' or key == 'delete' then
         Grid[SelectY][SelectX].content = " "
-        
+        if SelectX > 1 then
+            SelectX = SelectX - 1
+        end
+
     elseif key == 'return' then
         -- return
 
@@ -167,6 +195,7 @@ function love.keypressed(key)
 
                 if Grid[SelectY][pos].content == WordStorage[pos].character then
                     Grid[SelectY][pos].flag = 'correct'
+                    print(Grid[SelectY][pos].flag .. pos)
                     wordscore = wordscore + 1
                         if wordscore == WORD_LENGTH then
                             GameState = 'won'
@@ -175,7 +204,7 @@ function love.keypressed(key)
                 end
 
                 for p = 1, WORD_LENGTH do -- check letter is within WordStorage [1 to ..] -- only if not correct.
-                    if  Grid[SelectY][pos].flag ~= 'correct' and Grid[SelectY][p].content == WordStorage[pos].character then 
+                    if  Grid[SelectY][p].flag ~= 'correct' and Grid[SelectY][p].content == WordStorage[pos].character then 
                         Grid[SelectY][p].flag = 'possible' -- Flag the Grid
                     end      
                 end
@@ -187,6 +216,14 @@ function love.keypressed(key)
             if SelectY > GRID_MAX_HEIGHT then
                 GameState = 'gameover'
             end
+
+            --
+
+        if GameState == 'won' then
+
+            new_game()
+
+        end
 
         else
             game_reset()
@@ -238,24 +275,28 @@ function love.draw()
 
                 -- draw box
 
-                love.graphics.rectangle('fill',x * GRID_SIZE,y * GRID_SIZE,GRIDSIZE_DRAW,GRIDSIZE_DRAW) 
+                love.graphics.rectangle('fill',(WINDOW_WIDTH / 3) + x * GRID_SIZE,y * GRID_SIZE,GRIDSIZE_DRAW,GRIDSIZE_DRAW) 
 
                 -- draw text
                 
                 love.graphics.setColor(1,1,1,1)
-                love.graphics.print(tostring(Grid[y][x].content ), (x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
+                love.graphics.print(tostring(Grid[y][x].content ), ((WINDOW_WIDTH / 3) +x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
           
+                -- draw score
 
+                love.graphics.print('score: ' .. score)
             end
 
 
         end    
         
         love.graphics.setColor(1,1,1,0.3)
-        love.graphics.rectangle('fill', (SelectX * GRID_SIZE), (SelectY * GRID_SIZE), GRIDSIZE_DRAW, GRIDSIZE_DRAW )
+        love.graphics.rectangle('fill', ((WINDOW_WIDTH / 3) + SelectX * GRID_SIZE), (SelectY * GRID_SIZE), GRIDSIZE_DRAW, GRIDSIZE_DRAW )
     elseif GameState == 'won' then
         love.graphics.setColor(1,1,1,1)
         love.graphics.printf('Je hebt gewonnen',(WINDOW_WIDTH / 2) - font:getWidth('You Won'), (WINDOW_HEIGHT / 2)  , 125, "center")
+        love.graphics.printf('Druk op enter om een volgend woord te spelen', (WINDOW_WIDTH / 3) - 100, (WINDOW_HEIGHT / 3)  , 400, "center")
+
     elseif GameState == 'gameover' then
     love.graphics.setColor(1,1,1,1)
     love.graphics.printf('Je hebt verloren',(WINDOW_WIDTH / 2) - font:getWidth('You Won'), (WINDOW_HEIGHT / 2)  , 125, "center")
