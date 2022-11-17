@@ -8,23 +8,29 @@
 
 
 -- constants
-WINDOW_WIDTH, WINDOW_HEIGHT = love.graphics.getDimensions()
+WINDOW_WIDTH, WINDOW_HEIGHT = love.window.getDesktopDimensions()
 WORD_LENGTH = 5
 GRID_MAX_HEIGHT = 5 
 GRID_SIZE = 40
 GRIDSIZE_DRAW = 38
-FONT_SIZE = 20
+FONT_SIZE = 25
 MENU_HEIGHT = 30
+local push = require "push"
+love.graphics.setDefaultFilter("nearest", "nearest")
+
+local gameWidth, gameHeight = 640, 480 --fixed game resolution
+push:setupScreen(gameWidth, gameHeight, WINDOW_WIDTH * .7, WINDOW_HEIGHT * .7, {fullscreen = false})
+
 
 local place = 1
-
+local FontType = 'DigitalDisco.ttf'
 local Word = "prima"
 
 local SelectX, SelectY = 1 ,1 
 local GameState = 'playing'
 
 function love.load()
-    font = love.graphics.newFont(FONT_SIZE)
+    font = love.graphics.newFont(FontType, FONT_SIZE)
     game_reset()
 end
 
@@ -75,7 +81,7 @@ function game_reset()
     -- build menu 
         
    
-    for y = 1, 3 do
+    for y = 1, 4 do
         menu[y] = { 
         text = " ",
         select = false
@@ -246,6 +252,8 @@ end
 -- end
 
 function love.draw()
+    push:start()
+
     love.graphics.setFont(font)
 
     if GameState == 'main' then
@@ -275,12 +283,12 @@ function love.draw()
 
                 -- draw box
 
-                love.graphics.rectangle('fill',(WINDOW_WIDTH / 3) + x * GRID_SIZE,y * GRID_SIZE,GRIDSIZE_DRAW,GRIDSIZE_DRAW) 
+                love.graphics.rectangle('fill',(gameWidth / 3) + x * GRID_SIZE,y * GRID_SIZE,GRIDSIZE_DRAW,GRIDSIZE_DRAW) 
 
                 -- draw text
                 
                 love.graphics.setColor(1,1,1,1)
-                love.graphics.print(tostring(Grid[y][x].content ), ((WINDOW_WIDTH / 3) +x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
+                love.graphics.print(tostring(Grid[y][x].content ), ((gameWidth / 3) +x * GRID_SIZE) + GRID_SIZE / 4 , (y * GRID_SIZE) + GRID_SIZE /4) 
           
                 -- draw score
 
@@ -291,16 +299,19 @@ function love.draw()
         end    
         
         love.graphics.setColor(1,1,1,0.3)
-        love.graphics.rectangle('fill', ((WINDOW_WIDTH / 3) + SelectX * GRID_SIZE), (SelectY * GRID_SIZE), GRIDSIZE_DRAW, GRIDSIZE_DRAW )
+        love.graphics.rectangle('fill', ((gameWidth / 3) + SelectX * GRID_SIZE), (SelectY * GRID_SIZE), GRIDSIZE_DRAW, GRIDSIZE_DRAW )
     elseif GameState == 'won' then
         love.graphics.setColor(1,1,1,1)
-        love.graphics.printf('Je hebt gewonnen',(WINDOW_WIDTH / 2) - font:getWidth('You Won'), (WINDOW_HEIGHT / 2)  , 125, "center")
-        love.graphics.printf('Druk op enter om een volgend woord te spelen', (WINDOW_WIDTH / 3) - 100, (WINDOW_HEIGHT / 3)  , 400, "center")
+        love.graphics.printf('Je hebt gewonnen',(gameWidth / 2) - font:getWidth('You Won'), (gameHeight / 2)  , 125, "center")
+        love.graphics.printf('Druk op enter om een volgend woord te spelen', (gameWidth / 3) - 100, (gameHeight / 3)  , 400, "center")
 
     elseif GameState == 'gameover' then
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.printf('Je hebt verloren',(WINDOW_WIDTH / 2) - font:getWidth('You Won'), (WINDOW_HEIGHT / 2)  , 125, "center")
+        love.graphics.setColor(1,1,1,1)
+        love.graphics.printf('Je hebt verloren',(gameWidth / 2) - font:getWidth('You Won'), (gameHeight / 2)  , 125, "center")
     end
+
+    push:finish()
+
 end
 
 
@@ -309,17 +320,19 @@ function main_menu()
     love.graphics.setColor(1,1,1,1)
 
 
-    love.graphics.rectangle('line', WINDOW_WIDTH * .1, WINDOW_HEIGHT * .1, WINDOW_WIDTH * .8, WINDOW_HEIGHT * .8)
-    love.graphics.printf('Welkom bij Wurdle',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 4)  , 250, "center")
-    love.graphics.printf('Gemaakt door Jordi de Geus',(WINDOW_WIDTH / 3)  , (WINDOW_HEIGHT / 3) , 250, "center")
+    love.graphics.rectangle('line', gameWidth * .1, gameHeight * .1, gameWidth * .8, gameHeight * .8)
+    love.graphics.printf('Welkom bij Wurdle',(gameWidth / 3)  , (gameHeight / 4)  , 250, "center")
+    love.graphics.printf('Gemaakt door Jordi de Geus',(gameWidth / 3)  , (gameHeight / 3) , 250, "center")
 
 
  
     menu[1].text = 'Nieuw spel' 
     menu[2].text = 'Woordlengte: ' .. WORD_LENGTH
     menu[3].text = 'Aantal Rijen: ' .. GRID_MAX_HEIGHT
+    menu[4].text = 'Lettertype: ' .. FontType
 
-    for y = 1 , 3 do
+
+    for y = 1 , #menu do
 
         if menu[y].select == true then 
             love.graphics.setColor(1,1,0,0.8) 
@@ -328,7 +341,7 @@ function main_menu()
         end        
 
 
-        love.graphics.printf(menu[y].text,(WINDOW_WIDTH / 3)  , (y + 10) * MENU_HEIGHT ,250, "center")
+        love.graphics.printf(menu[y].text,(gameWidth / 3)  , (y + 8) * MENU_HEIGHT ,250, "center")
     end
 
 
